@@ -14,22 +14,22 @@ mod kw {
 }
 
 pub struct BitAccess {
-    base: Base,
-    ident: Ident,
-    vis: Visibility,
+    top_level_arguments: TopLevelMacroArguments,
+    struct_identifier: Ident,
+    struct_visibility: Visibility,
     fields: Vec<BitField>,
 }
 
-struct Base {
+struct TopLevelMacroArguments {
     base_type: Type,
 }
 
 struct BitField {
-    mods: Modifiers,
+    field_level_arguments: FieldLevelMacroArguments,
     ident: Ident,
 }
 
-struct Modifiers {
+struct FieldLevelMacroArguments {
     offset: u64,
     size: u64,
 }
@@ -48,18 +48,18 @@ enum ModifierKW {
 impl BitAccess {
     pub fn new(args: TokenStream2, item_struct: ItemStruct) -> syn::Result<Self> {
         Ok(Self {
-            base: parse::<Base>(args),
-            ident: item_struct.ident,
-            vis: item_struct.vis,
+            top_level_arguments: parse::<TopLevelMacroArguments>(args),
+            struct_identifier: item_struct.ident,
+            struct_visibility: item_struct.vis,
             fields: BitField::many(item_struct.fields)?,
         })
     }
 
     pub fn into_token_stream(self) -> TokenStream2 {
         let Self {
-            base: Base { base_type },
-            ident,
-            vis,
+            top_level_arguments: TopLevelMacroArguments { base_type },
+            struct_identifier: ident,
+            struct_visibility: vis,
             fields,
         } = self;
 
@@ -124,7 +124,7 @@ impl BitAccess {
     }
 }
 
-impl Parse for Base {
+impl Parse for TopLevelMacroArguments {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let _: kw::base_type = input.parse()?;
         let _: Token![=] = input.parse()?;
@@ -162,14 +162,14 @@ impl BitField {
             ),
         };
         Ok(Self {
-            mods: parse::<Modifiers>(mods.tokens),
+            field_level_arguments: parse::<FieldLevelMacroArguments>(mods.tokens),
             ident: field_ident,
         })
     }
 
     fn reader(&self) -> TokenStream2 {
         let Self {
-            mods: Modifiers { offset, size },
+            field_level_arguments: FieldLevelMacroArguments { offset, size },
             ..
         } = self;
         quote! {
@@ -179,7 +179,7 @@ impl BitField {
 
     fn writer(&self) -> TokenStream2 {
         let Self {
-            mods: Modifiers { offset, size },
+            field_level_arguments: FieldLevelMacroArguments { offset, size },
             ..
         } = self;
         quote! {
@@ -188,7 +188,7 @@ impl BitField {
     }
 }
 
-impl Parse for Modifiers {
+impl Parse for FieldLevelMacroArguments {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let content;
 
@@ -223,7 +223,7 @@ impl Parse for Modifiers {
 }
 
 impl ModifiersBuilder {
-    fn build(self) -> Modifiers {
+    fn build(self) -> FieldLevelMacroArguments {
         let offset = match self.offset {
             Some(offset) => offset,
             None => {
@@ -236,7 +236,7 @@ impl ModifiersBuilder {
                 proc_macro_error::abort_call_site!("missing `size` entry in bitaccess attribute")
             }
         };
-        Modifiers { offset, size }
+        FieldLevelMacroArguments { offset, size }
     }
 }
 
