@@ -79,16 +79,18 @@ impl BitAccess {
         let readers: Vec<_> = fields.iter().map(|item| item.reader()).collect();
         let writers: Vec<_> = fields.iter().map(|item| item.writer()).collect();
 
+        let const_enums: Vec<_> = fields.iter().map(|field| field.const_enum(&base_type)).collect();
+
         quote! {
             #vis struct #ident {
                 inner: #mod_ident::#private_ident,
             }
 
-            #vis mod #mod_ident {
-                #vis enum Fields {
-                    #(#enum_field_names),*
-                }
+            impl #ident {
+                #(#const_enums)*
+            }
 
+            #vis mod #mod_ident {
                 #[allow(non_camel_case_types)]
                 pub(super) struct #private_ident {
                     value: #base_type,
@@ -103,15 +105,17 @@ impl BitAccess {
                         Self { inner: #private_ident { value, }, }
                     }
 
-                    #vis fn read(&self, bits: Fields) -> #base_type {
+                    #vis fn read(&self, bits: #base_type) -> #base_type {
                         match bits {
-                            #(Fields::#enum_field_names => #readers),*
+                            #(Self::#enum_field_names => #readers,)*
+                            _ => panic!("Use provided consts to access register"),
                         }
                     }
 
-                    #vis fn write(&mut self, bits: Fields, new_value: #base_type) {
+                    #vis fn write(&mut self, bits: #base_type, new_value: #base_type) {
                         match bits {
-                            #(Fields::#enum_field_names => #writers),*
+                            #(Self::#enum_field_names => #writers,)*
+                            _ => panic!("Use provided consts to access register"),
                         }
                     }
 
@@ -169,21 +173,33 @@ impl BitField {
 
     fn reader(&self) -> TokenStream2 {
         let Self {
-            field_level_arguments: FieldLevelMacroArguments { offset, size },
+            field_level_arguments: FieldLevelMacroArguments { offset, .. },
             ..
         } = self;
         quote! {
-            (self.inner.value & (((1 << #size) - 1) << #offset)) >> #offset
+            (self.inner.value & bits) >> #offset
         }
     }
 
     fn writer(&self) -> TokenStream2 {
         let Self {
-            field_level_arguments: FieldLevelMacroArguments { offset, size },
+            field_level_arguments: FieldLevelMacroArguments { offset, .. },
             ..
         } = self;
         quote! {
-            self.inner.value |= (new_value & (1 << #size) - 1) << #offset
+            self.inner.value |= (new_value & (bits >> #offset)) << #offset
+        }
+    }
+
+    fn const_enum(&self, base_type: &Type) -> TokenStream2 {
+        let Self {
+            field_level_arguments: FieldLevelMacroArguments { offset, size },ident
+        } = self;
+
+        let name = Ident::new(&ident.to_string().to_case(Case::Pascal), ident.span());
+
+        quote! {
+            const #name: #base_type = ((1 << #size) - 1) << #offset;
         }
     }
 }

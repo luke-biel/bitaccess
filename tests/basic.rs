@@ -23,16 +23,16 @@ fn can_init_value() {
 #[test]
 fn can_read_bits_value() {
     let r = Register::new(0b110 + (0b10_1100 << 3));
-    assert_eq!(r.read(register::Fields::F1), 0b110);
-    assert_eq!(r.read(register::Fields::F2), 0b10_1100)
+    assert_eq!(r.read(Register::F1), 0b110);
+    assert_eq!(r.read(Register::F2), 0b10_1100)
 }
 
 #[test]
 fn can_write_bits_value() {
     let mut r = Register::zero();
-    r.write(register::Fields::F1, 0b101);
-    r.write(register::Fields::F2, 0b11_1000);
-    assert_eq!(r.read(register::Fields::F1), 0b101);
-    assert_eq!(r.read(register::Fields::F2), 0b11_1000);
+    r.write(Register::F1, 0b101);
+    r.write(Register::F2, 0b11_1000);
+    assert_eq!(r.read(Register::F1), 0b101);
+    assert_eq!(r.read(Register::F2), 0b11_1000);
     assert_eq!(r.get_raw(), 0b1_1100_0101)
 }
