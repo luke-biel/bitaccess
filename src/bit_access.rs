@@ -1,7 +1,7 @@
 use convert_case::{Case, Casing};
 use proc_macro2::TokenStream as TokenStream2;
 use quote::quote;
-use syn::{parse_quote, Attribute, Ident, ItemEnum, Visibility, parse2};
+use syn::{parse2, parse_quote, Attribute, Ident, ItemEnum, Visibility};
 
 use crate::{bit_field::BitField, top_level_macro_arguments::TopLevelMacroArguments};
 
@@ -87,6 +87,29 @@ impl BitAccess {
             TokenStream2::new()
         };
 
+        let private_value_holder = if read_via.is_none() && write_via.is_none() {
+            quote! { value: #base_type }
+        } else {
+            TokenStream2::new()
+        };
+
+        let constructors = if read_via.is_none() && write_via.is_none() {
+            quote! {
+                #vis fn zero() -> Self {
+                    Self { inner: #private_ident { value: 0 } }
+                }
+
+                #vis fn new(value: #base_type) -> Self {
+                    Self { inner: #private_ident { value, }, }
+                }
+            }
+        } else {
+            quote! {
+                #vis fn new_global() -> Self {
+                    Self { inner: #private_ident {}, }
+                }
+            }
+        };
         let read_via = read_via.unwrap_or_else(|| parse_quote! { value = self.inner.value });
         let write_via = write_via.unwrap_or_else(|| parse_quote! { self.inner.value = value });
 
@@ -103,18 +126,13 @@ impl BitAccess {
 
             #vis mod #mod_ident {
                 #[allow(non_camel_case_types)]
+                #(#attributes)*
                 pub(super) struct #private_ident {
-                    value: #base_type,
+                    #private_value_holder
                 }
 
                 impl super::#ident {
-                    #vis fn zero() -> Self {
-                        Self { inner: #private_ident { value: 0 } }
-                    }
-
-                    #vis fn new(value: #base_type) -> Self {
-                        Self { inner: #private_ident { value, }, }
-                    }
+                    #constructors
 
                     #read_impl
 

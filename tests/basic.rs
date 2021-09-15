@@ -1,16 +1,26 @@
 use bitaccess::bitaccess;
 
 #[bitaccess(base_type = u64, kind = default)]
-#[repr(C)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Register {
-    #[bitaccess(offset = 0, size = 4)]
-    F1,
-    #[bits(4..=7)]
-    F2,
-    #[bits(8..12)]
-    F3,
-    #[bit(2)]
-    ThirdBit,
+    #[bitaccess(offset = 0, size = 4)] F1,
+    #[bits(4..=7)]                     F2,
+    #[bits(8..12)]                     F3,
+    #[bit(2)]                          ThirdBit,
+}
+
+// Don't do this at home
+static mut GLOBAL_TEST: u64 = 0;
+
+#[bitaccess(
+    base_type = u64,
+    kind = read_write,
+    read_via = "unsafe { value = crate::GLOBAL_TEST }",
+    write_via = "unsafe { crate::GLOBAL_TEST = value }"
+)]
+pub enum ViaTests {
+    #[bit(0)]
+    BitZero,
 }
 
 #[test]
@@ -45,4 +55,19 @@ fn can_write_bits_value() {
     assert_eq!(r.read(Register::F3), 0b1111);
     assert_eq!(r.get_raw(), 0b1111_1000_0111);
     assert_eq!(r.read(Register::ThirdBit), 1);
+}
+
+#[test]
+fn propagates_top_level_attributes() {
+    let v1 = Register::new(123);
+    let v2 = v1.clone();
+    assert_eq!(v1, v2);
+}
+
+#[test]
+fn can_use_custom_read_via() {
+    let mut r = ViaTests::new_global();
+    r.write(ViaTests::BitZero, 0b1);
+    assert_eq!(r.read(ViaTests::BitZero), 1);
+    assert_eq!(unsafe { GLOBAL_TEST }, 1);
 }
