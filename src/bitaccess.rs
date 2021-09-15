@@ -65,12 +65,7 @@ impl BitAccess {
 
         let enum_field_names: Vec<_> = fields
             .iter()
-            .map(|field| {
-                Ident::new(
-                    &field.ident.to_string().to_case(Case::Pascal),
-                    field.ident.span(),
-                )
-            })
+            .map(|field| Ident::new(&field.ident.to_string(), field.ident.span()))
             .collect();
 
         // TODO: Consider adding some random string to this module name, so that users can't manually edit it
@@ -194,7 +189,7 @@ impl BitField {
             ident,
         } = self;
 
-        let name = Ident::new(&ident.to_string().to_case(Case::Pascal), ident.span());
+        let name = Ident::new(&ident.to_string(), ident.span());
 
         quote! {
             const #name: #base_type = ((1 << #size) - 1) << #offset;
