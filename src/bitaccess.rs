@@ -4,13 +4,17 @@ use quote::quote;
 use syn::parse::{Parse, ParseStream};
 use syn::parse_quote::parse;
 use syn::punctuated::Punctuated;
-use syn::{parenthesized, Lit, Token, Type, Visibility};
+use syn::{
+    parenthesized, parse_quote, Error, Lit, Pat, PatRange, RangeLimits, Token, Type,
+    Visibility,
+};
 use syn::{Ident, ItemEnum, Variant};
 
 mod kw {
     syn::custom_keyword!(base_type);
     syn::custom_keyword!(offset);
     syn::custom_keyword!(size);
+    syn::custom_keyword!(kind);
 }
 
 pub struct BitAccess {
@@ -22,6 +26,8 @@ pub struct BitAccess {
 
 struct TopLevelMacroArguments {
     base_type: Type,
+    read: bool,
+    write: bool,
 }
 
 struct BitField {
@@ -40,9 +46,16 @@ struct ModifiersBuilder {
     size: Option<u64>,
 }
 
+struct ModifierRange {
+    pub lo: u64,
+    pub len: u64,
+}
+
 enum ModifierKW {
     Offset(u64),
     Size(u64),
+    Range(ModifierRange),
+    Single(u64),
 }
 
 impl BitAccess {
@@ -57,7 +70,12 @@ impl BitAccess {
 
     pub fn into_token_stream(self) -> TokenStream2 {
         let Self {
-            top_level_arguments: TopLevelMacroArguments { base_type },
+            top_level_arguments:
+                TopLevelMacroArguments {
+                    base_type,
+                    read,
+                    write,
+                },
             struct_identifier: ident,
             struct_visibility: vis,
             fields,
@@ -72,19 +90,45 @@ impl BitAccess {
         let mod_ident = Ident::new(&ident.to_string().to_case(Case::Snake), ident.span());
         let private_ident = Ident::new(&format!("__private_{}", &ident), ident.span());
 
-        let readers: Vec<_> = fields.iter().map(|item| item.reader()).collect();
-        let writers: Vec<_> = fields.iter().map(|item| item.writer()).collect();
-
         let const_enums: Vec<_> = fields
             .iter()
             .map(|field| field.const_enum(&base_type))
             .collect();
+
+        let read_impl = if read {
+            let readers: Vec<_> = fields.iter().map(|item| item.reader()).collect();
+            quote! {
+                #vis fn read(&self, bits: #base_type) -> #base_type {
+                    match bits {
+                        #(Self::#enum_field_names => #readers,)*
+                        _ => panic!("Use provided consts to access register"),
+                    }
+                }
+            }
+        } else {
+            TokenStream2::new()
+        };
+
+        let write_impl = if write {
+            let writers: Vec<_> = fields.iter().map(|item| item.writer()).collect();
+            quote! {
+                #vis fn write(&mut self, bits: #base_type, new_value: #base_type) {
+                    match bits {
+                        #(Self::#enum_field_names => #writers,)*
+                        _ => panic!("Use provided consts to access register"),
+                    }
+                }
+            }
+        } else {
+            TokenStream2::new()
+        };
 
         quote! {
             #vis struct #ident {
                 inner: #mod_ident::#private_ident,
             }
 
+            #[allow(non_upper_case_globals)]
             impl #ident {
                 #(#const_enums)*
             }
@@ -104,19 +148,9 @@ impl BitAccess {
                         Self { inner: #private_ident { value, }, }
                     }
 
-                    #vis fn read(&self, bits: #base_type) -> #base_type {
-                        match bits {
-                            #(Self::#enum_field_names => #readers,)*
-                            _ => panic!("Use provided consts to access register"),
-                        }
-                    }
+                    #read_impl
 
-                    #vis fn write(&mut self, bits: #base_type, new_value: #base_type) {
-                        match bits {
-                            #(Self::#enum_field_names => #writers,)*
-                            _ => panic!("Use provided consts to access register"),
-                        }
-                    }
+                    #write_impl
 
                     #vis fn get_raw(&self) -> #base_type {
                         self.inner.value
@@ -131,8 +165,28 @@ impl Parse for TopLevelMacroArguments {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let _: kw::base_type = input.parse()?;
         let _: Token![=] = input.parse()?;
+        let base_type = input.parse()?;
+        let _: Token![,] = input.parse()?;
+        let _: kw::kind = input.parse()?;
+        let _: Token![=] = input.parse()?;
+        let kind: Ident = input.parse()?;
+
+        let (read, write) = match kind.to_string().as_str() {
+            "read_only" => (true, false),
+            "write_only" => (false, true),
+            "read_write" | "default" => (true, true),
+            _ => {
+                return Err(Error::new(
+                    kind.span(),
+                    "unsupported value for bitaccess kind",
+                ))
+            }
+        };
+
         Ok(Self {
-            base_type: input.parse()?,
+            base_type,
+            read,
+            write,
         })
     }
 }
@@ -224,6 +278,24 @@ impl Parse for FieldLevelMacroArguments {
                         );
                     }
                 }
+                ModifierKW::Range(range) => {
+                    let ex1 = builder.size.replace(range.len);
+                    let ex2 = builder.offset.replace(range.lo);
+                    if ex1.is_some() || ex2.is_some() {
+                        proc_macro_error::abort_call_site!(
+                            "cannot use other bit specifiers with `range` bitaccess definition"
+                        )
+                    }
+                }
+                ModifierKW::Single(single) => {
+                    let ex1 = builder.size.replace(1);
+                    let ex2 = builder.offset.replace(*single);
+                    if ex1.is_some() || ex2.is_some() {
+                        proc_macro_error::abort_call_site!(
+                            "cannot use other bit specifiers with `single` bitaccess definition"
+                        )
+                    }
+                }
             }
         }
 
@@ -255,21 +327,52 @@ impl Parse for ModifierKW {
         if lookahead.peek(kw::offset) {
             let _: kw::offset = input.parse()?;
             let _: Token![=] = input.parse()?;
-            let lit = match input.parse::<Lit>()? {
-                Lit::Int(lit_int) => lit_int.base10_parse::<u64>()?,
-                _ => proc_macro_error::abort_call_site!("invalid value for `offset`"),
-            };
+            let lit = int_from_lit(input.parse::<Lit>()?)?;
             Ok(Self::Offset(lit))
         } else if lookahead.peek(kw::size) {
             let _: kw::size = input.parse()?;
             let _: Token![=] = input.parse()?;
-            let lit = match input.parse::<Lit>()? {
-                Lit::Int(lit_int) => lit_int.base10_parse::<u64>()?,
-                _ => proc_macro_error::abort_call_site!("invalid value for `size`"),
-            };
+            let lit = int_from_lit(input.parse::<Lit>()?)?;
             Ok(Self::Size(lit))
         } else {
-            proc_macro_error::abort_call_site!("unknown ModifierKW token")
+            if let Ok(pat) = input.parse::<Pat>() {
+                match pat {
+                    Pat::Range(range) => return Ok(Self::Range(range_from_pat(&range)?)),
+                    Pat::Lit(lit) => {
+                        let lit: Lit = parse_quote! { #lit };
+                        let single = int_from_lit(lit)?;
+                        return Ok(Self::Single(single));
+                    }
+                    _ => {}
+                }
+            }
+
+            Err(Error::new(input.span(), "unknown ModifierKW token"))
         }
+    }
+}
+
+fn range_from_pat(input: &PatRange) -> syn::Result<ModifierRange> {
+    let PatRange { lo, limits, hi, .. } = input;
+
+    let lo: Lit = parse_quote! { #lo };
+    let hi: Lit = parse_quote! { #hi };
+
+    let lo = int_from_lit(lo)?;
+    let hi = int_from_lit(hi)?;
+
+    match limits {
+        RangeLimits::HalfOpen(_) => Ok(ModifierRange { lo, len: hi - lo }), // 0 sized bitfields aren't supported anyway
+        RangeLimits::Closed(_) => Ok(ModifierRange {
+            lo,
+            len: hi - lo + 1,
+        }),
+    }
+}
+
+fn int_from_lit(lit: Lit) -> syn::Result<u64> {
+    match lit {
+        Lit::Int(lit_int) => lit_int.base10_parse::<u64>(),
+        _ => Err(Error::new(lit.span(), "invalid value for parameter")),
     }
 }
