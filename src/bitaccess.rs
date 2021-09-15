@@ -4,10 +4,7 @@ use quote::quote;
 use syn::parse::{Parse, ParseStream};
 use syn::parse_quote::parse;
 use syn::punctuated::Punctuated;
-use syn::{
-    parenthesized, parse_quote, Error, Lit, Pat, PatRange, RangeLimits, Token, Type,
-    Visibility,
-};
+use syn::{parenthesized, parse_quote, Error, Lit, Pat, PatRange, RangeLimits, Token, Type, Visibility, Attribute};
 use syn::{Ident, ItemEnum, Variant};
 
 mod kw {
@@ -22,6 +19,7 @@ pub struct BitAccess {
     struct_identifier: Ident,
     struct_visibility: Visibility,
     fields: Vec<BitField>,
+    attributes: Vec<Attribute>,
 }
 
 struct TopLevelMacroArguments {
@@ -59,12 +57,13 @@ enum ModifierKW {
 }
 
 impl BitAccess {
-    pub fn new(args: TokenStream2, item_struct: ItemEnum) -> syn::Result<Self> {
+    pub fn new(args: TokenStream2, item: ItemEnum) -> syn::Result<Self> {
         Ok(Self {
             top_level_arguments: parse::<TopLevelMacroArguments>(args),
-            struct_identifier: item_struct.ident,
-            struct_visibility: item_struct.vis,
-            fields: BitField::many(item_struct.variants)?,
+            struct_identifier: item.ident,
+            struct_visibility: item.vis,
+            fields: BitField::many(item.variants)?,
+            attributes: item.attrs,
         })
     }
 
@@ -79,6 +78,7 @@ impl BitAccess {
             struct_identifier: ident,
             struct_visibility: vis,
             fields,
+            attributes,
         } = self;
 
         let enum_field_names: Vec<_> = fields
@@ -86,7 +86,6 @@ impl BitAccess {
             .map(|field| Ident::new(&field.ident.to_string(), field.ident.span()))
             .collect();
 
-        // TODO: Consider adding some random string to this module name, so that users can't manually edit it
         let mod_ident = Ident::new(&ident.to_string().to_case(Case::Snake), ident.span());
         let private_ident = Ident::new(&format!("__private_{}", &ident), ident.span());
 
@@ -124,6 +123,7 @@ impl BitAccess {
         };
 
         quote! {
+            #(#attributes)*
             #vis struct #ident {
                 inner: #mod_ident::#private_ident,
             }

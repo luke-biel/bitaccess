@@ -1,6 +1,7 @@
 use bitaccess::bitaccess;
 
 #[bitaccess(base_type = u64, kind = default)]
+#[repr(C)]
 pub enum Register {
     #[bitaccess(offset = 0, size = 4)]
     F1,
