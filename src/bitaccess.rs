@@ -203,7 +203,7 @@ impl BitField {
         let mods = match variant
             .attrs
             .into_iter()
-            .find(|attr| attr.path.is_ident("bitaccess"))
+            .find(|attr| attr.path.is_ident("bitaccess") || attr.path.is_ident("bits") || attr.path.is_ident("bit"))
         {
             Some(mods) => mods,
             None => proc_macro_error::abort_call_site!(

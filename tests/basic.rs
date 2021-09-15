@@ -4,11 +4,11 @@ use bitaccess::bitaccess;
 pub enum Register {
     #[bitaccess(offset = 0, size = 4)]
     F1,
-    #[bitaccess(4..=7)]
+    #[bits(4..=7)]
     F2,
-    #[bitaccess(8..12)]
+    #[bits(8..12)]
     F3,
-    #[bitaccess(2)]
+    #[bit(2)]
     ThirdBit,
 }
 
