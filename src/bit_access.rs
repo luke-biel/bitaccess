@@ -1,25 +1,12 @@
 use convert_case::{Case, Casing};
 use proc_macro2::TokenStream as TokenStream2;
 use quote::quote;
-use syn::{
-    parse::{Parse, ParseStream},
-    parse_quote::parse,
-    Attribute,
-    Error,
-    Expr,
-    Ident,
-    ItemEnum,
-    Token,
-    Type,
-    Visibility,
-};
+use syn::{parse_quote, Attribute, Ident, ItemEnum, Visibility, parse2};
 
-use crate::bitfield::BitField;
+use crate::{bit_field::BitField, top_level_macro_arguments::TopLevelMacroArguments};
 
-pub(crate) mod kw {
+pub mod kw {
     syn::custom_keyword!(base_type);
-    syn::custom_keyword!(offset);
-    syn::custom_keyword!(size);
     syn::custom_keyword!(kind);
 }
 
@@ -31,18 +18,10 @@ pub struct BitAccess {
     attributes: Vec<Attribute>,
 }
 
-struct TopLevelMacroArguments {
-    base_type: Type,
-    read: bool,
-    write: bool,
-    write_via: Option<Expr>,
-    read_via: Option<Expr>,
-}
-
 impl BitAccess {
     pub fn new(args: TokenStream2, item: ItemEnum) -> syn::Result<Self> {
         Ok(Self {
-            top_level_arguments: parse::<TopLevelMacroArguments>(args),
+            top_level_arguments: parse2::<TopLevelMacroArguments>(args)?,
             struct_identifier: item.ident,
             struct_visibility: item.vis,
             fields: BitField::many(item.variants)?,
@@ -83,6 +62,7 @@ impl BitAccess {
             let readers: Vec<_> = fields.iter().map(|item| item.reader()).collect();
             quote! {
                 #vis fn read(&self, bits: #base_type) -> #base_type {
+                    let value = self.read_raw();
                     match bits {
                         #(Self::#enum_field_names => #readers,)*
                         _ => panic!("Use provided consts to access register"),
@@ -106,6 +86,9 @@ impl BitAccess {
         } else {
             TokenStream2::new()
         };
+
+        let read_via = read_via.unwrap_or_else(|| parse_quote! { value = self.inner.value });
+        let write_via = write_via.unwrap_or_else(|| parse_quote! { self.inner.value = value });
 
         quote! {
             #(#attributes)*
@@ -137,43 +120,23 @@ impl BitAccess {
 
                     #write_impl
 
+                    fn read_raw(&self) -> #base_type {
+                        let value: #base_type;
+                        #read_via;
+                        value
+                    }
+
+                    fn write_raw(&mut self, new_value: #base_type) {
+                        let old_value = self.read_raw();
+                        let value = old_value | new_value;
+                        #write_via
+                    }
+
                     #vis fn get_raw(&self) -> #base_type {
-                        self.inner.value
+                        self.read_raw()
                     }
                 }
             }
         }
-    }
-}
-
-impl Parse for TopLevelMacroArguments {
-    fn parse(input: ParseStream) -> syn::Result<Self> {
-        let _: kw::base_type = input.parse()?;
-        let _: Token![=] = input.parse()?;
-        let base_type = input.parse()?;
-        let _: Token![,] = input.parse()?;
-        let _: kw::kind = input.parse()?;
-        let _: Token![=] = input.parse()?;
-        let kind: Ident = input.parse()?;
-
-        let (read, write) = match kind.to_string().as_str() {
-            "read_only" => (true, false),
-            "write_only" => (false, true),
-            "read_write" | "default" => (true, true),
-            _ => {
-                return Err(Error::new(
-                    kind.span(),
-                    "unsupported value for bitaccess kind",
-                ))
-            }
-        };
-
-        Ok(Self {
-            base_type,
-            read,
-            write,
-            read_via: None,
-            write_via: None,
-        })
     }
 }

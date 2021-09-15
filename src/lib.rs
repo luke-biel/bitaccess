@@ -3,10 +3,13 @@ use proc_macro::TokenStream;
 use proc_macro_error::proc_macro_error;
 use syn::{parse_macro_input, ItemEnum};
 
-use crate::bitaccess::BitAccess;
+use crate::bit_access::BitAccess;
 
-mod bitaccess;
-mod bitfield;
+mod bit_access;
+mod bit_field;
+mod common;
+mod field_level_macro_arguments;
+mod top_level_macro_arguments;
 
 #[proc_macro_attribute]
 #[proc_macro_error]
