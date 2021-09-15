@@ -4,8 +4,8 @@ use quote::quote;
 use syn::parse::{Parse, ParseStream};
 use syn::parse_quote::parse;
 use syn::punctuated::Punctuated;
-use syn::Ident;
-use syn::{parenthesized, Field, Fields, ItemStruct, Lit, Token, Type, Visibility};
+use syn::{parenthesized, Lit, Token, Type, Visibility};
+use syn::{Ident, ItemEnum, Variant};
 
 mod kw {
     syn::custom_keyword!(base_type);
@@ -46,12 +46,12 @@ enum ModifierKW {
 }
 
 impl BitAccess {
-    pub fn new(args: TokenStream2, item_struct: ItemStruct) -> syn::Result<Self> {
+    pub fn new(args: TokenStream2, item_struct: ItemEnum) -> syn::Result<Self> {
         Ok(Self {
             top_level_arguments: parse::<TopLevelMacroArguments>(args),
             struct_identifier: item_struct.ident,
             struct_visibility: item_struct.vis,
-            fields: BitField::many(item_struct.fields)?,
+            fields: BitField::many(item_struct.variants)?,
         })
     }
 
@@ -73,13 +73,17 @@ impl BitAccess {
             })
             .collect();
 
+        // TODO: Consider adding some random string to this module name, so that users can't manually edit it
         let mod_ident = Ident::new(&ident.to_string().to_case(Case::Snake), ident.span());
         let private_ident = Ident::new(&format!("__private_{}", &ident), ident.span());
 
         let readers: Vec<_> = fields.iter().map(|item| item.reader()).collect();
         let writers: Vec<_> = fields.iter().map(|item| item.writer()).collect();
 
-        let const_enums: Vec<_> = fields.iter().map(|field| field.const_enum(&base_type)).collect();
+        let const_enums: Vec<_> = fields
+            .iter()
+            .map(|field| field.const_enum(&base_type))
+            .collect();
 
         quote! {
             #vis struct #ident {
@@ -139,22 +143,15 @@ impl Parse for TopLevelMacroArguments {
 }
 
 impl BitField {
-    fn many(fields: Fields) -> syn::Result<Vec<Self>> {
+    fn many(fields: Punctuated<Variant, Token![,]>) -> syn::Result<Vec<Self>> {
         fields
             .into_iter()
-            .map(|field: Field| BitField::single(field))
+            .map(|variant: Variant| BitField::single(variant))
             .collect()
     }
 
-    fn single(field: Field) -> syn::Result<Self> {
-        let field_ident = match field.ident {
-            Some(ident) => ident,
-            None => {
-                proc_macro_error::abort_call_site!("cannot implement bitaccess with unnamed fields")
-            }
-        };
-
-        let mods = match field
+    fn single(variant: Variant) -> syn::Result<Self> {
+        let mods = match variant
             .attrs
             .into_iter()
             .find(|attr| attr.path.is_ident("bitaccess"))
@@ -162,12 +159,12 @@ impl BitField {
             Some(mods) => mods,
             None => proc_macro_error::abort_call_site!(
                 "missing bitaccess attribute on field `{}`",
-                &field_ident
+                &variant.ident
             ),
         };
         Ok(Self {
             field_level_arguments: parse::<FieldLevelMacroArguments>(mods.tokens),
-            ident: field_ident,
+            ident: variant.ident,
         })
     }
 
@@ -193,7 +190,8 @@ impl BitField {
 
     fn const_enum(&self, base_type: &Type) -> TokenStream2 {
         let Self {
-            field_level_arguments: FieldLevelMacroArguments { offset, size },ident
+            field_level_arguments: FieldLevelMacroArguments { offset, size },
+            ident,
         } = self;
 
         let name = Ident::new(&ident.to_string().to_case(Case::Pascal), ident.span());

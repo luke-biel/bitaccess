@@ -1,11 +1,11 @@
 use bitaccess::bitaccess;
 
 #[bitaccess(base_type = u64)]
-pub struct Register {
+pub enum Register {
     #[bitaccess(offset = 0, size = 3)]
-    f1: (),
+    F1,
     #[bitaccess(offset = 3, size = 6)]
-    f2: (),
+    F2,
 }
 
 #[test]
