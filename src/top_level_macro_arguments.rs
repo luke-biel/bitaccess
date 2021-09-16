@@ -156,13 +156,6 @@ impl TopLevelMacroArgumentsBuilder {
             read: true,
             write: true,
         });
-        if (self.write_via.is_some() && self.read_via.is_none())
-            || (self.write_via.is_none() && self.read_via.is_some())
-        {
-            proc_macro_error::abort_call_site!(
-                "must specify either both `write_via` and `read_via` or none"
-            )
-        }
 
         TopLevelMacroArguments {
             base_type,

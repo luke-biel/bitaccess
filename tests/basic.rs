@@ -3,10 +3,14 @@ use bitaccess::bitaccess;
 #[bitaccess(base_type = u64, kind = default)]
 #[derive(Clone, Debug, PartialEq)]
 pub enum Register {
-    #[bitaccess(offset = 0, size = 4)] F1,
-    #[bits(4..=7)]                     F2,
-    #[bits(8..12)]                     F3,
-    #[bit(2)]                          ThirdBit,
+    #[bitaccess(offset = 0, size = 4)]
+    F1,
+    #[bits(4..=7)]
+    F2,
+    #[bits(8..12)]
+    F3,
+    #[bit(2)]
+    ThirdBit,
 }
 
 // Don't do this at home
