@@ -58,6 +58,8 @@ impl BitAccess {
             .map(|field| field.const_enum(&base_type))
             .collect();
 
+        let enums: Vec<TokenStream2> = fields.iter().map(|field| field.extra_enum_access()).collect();
+
         let read_impl = if read {
             let readers: Vec<_> = fields.iter().map(|item| item.reader()).collect();
             quote! {
@@ -76,7 +78,8 @@ impl BitAccess {
         let write_impl = if write {
             let writers: Vec<_> = fields.iter().map(|item| item.writer()).collect();
             quote! {
-                #vis fn write(&mut self, bits: #base_type, new_value: #base_type) {
+                #vis fn write(&mut self, bits: #base_type, new_value: impl Into<#base_type>) {
+                    let new_value: #base_type = new_value.into();
                     match bits {
                         #(Self::#enum_field_names => #writers,)*
                         _ => panic!("Use provided consts to access register"),
@@ -125,6 +128,8 @@ impl BitAccess {
             }
 
             #vis mod #mod_ident {
+                #(#enums)*
+
                 #[allow(non_camel_case_types)]
                 #(#attributes)*
                 pub(super) struct #private_ident {

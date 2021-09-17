@@ -27,6 +27,17 @@ pub enum ViaTests {
     BitZero,
 }
 
+#[bitaccess(base_type = u64)]
+pub enum Variants {
+    #[bits(0..3)]
+    #[variants(
+        FirstOn  => 0b001,
+        SecondOn => 0b010,
+        ThirdOn  => 0b100,
+    )]
+    ThreeBits,
+}
+
 #[test]
 fn initializes_to_zero() {
     let r = Register::zero();
@@ -51,9 +62,9 @@ fn can_read_bits_value() {
 #[test]
 fn can_write_bits_value() {
     let mut r = Register::zero();
-    r.write(Register::F1, 0b0111);
-    r.write(Register::F2, 0b1000);
-    r.write(Register::F3, 0b1111);
+    r.write(Register::F1, 0b0111u64);
+    r.write(Register::F2, 0b1000u64);
+    r.write(Register::F3, 0b1111u64);
     assert_eq!(r.read(Register::F1), 0b111);
     assert_eq!(r.read(Register::F2), 0b1000);
     assert_eq!(r.read(Register::F3), 0b1111);
@@ -71,7 +82,14 @@ fn propagates_top_level_attributes() {
 #[test]
 fn can_use_custom_read_via() {
     let mut r = ViaTests::new_global();
-    r.write(ViaTests::BitZero, 0b1);
+    r.write(ViaTests::BitZero, 0b1u64);
     assert_eq!(r.read(ViaTests::BitZero), 1);
     assert_eq!(unsafe { GLOBAL_TEST }, 1);
+}
+
+#[test]
+fn can_use_variants() {
+    let mut r = Variants::zero();
+    r.write(Variants::ThreeBits, variants::ThreeBits::FirstOn);
+    assert_eq!(r.read(Variants::ThreeBits), variants::ThreeBits::FirstOn);
 }

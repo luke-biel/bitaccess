@@ -8,6 +8,7 @@ use crate::bit_access::BitAccess;
 mod bit_access;
 mod bit_field;
 mod common;
+mod extra_enum_access;
 mod field_level_macro_arguments;
 mod top_level_macro_arguments;
 
