@@ -27,17 +27,6 @@ pub enum ViaTests {
     BitZero,
 }
 
-#[bitaccess(base_type = u64)]
-pub enum Variants {
-    #[bits(0..3)]
-    #[variants(
-        FirstOn  => 0b001,
-        SecondOn => 0b010,
-        ThirdOn  => 0b100,
-    )]
-    ThreeBits,
-}
-
 #[test]
 fn initializes_to_zero() {
     let r = Register::zero();
@@ -85,11 +74,4 @@ fn can_use_custom_read_via() {
     r.write(ViaTests::BitZero, 0b1u64);
     assert_eq!(r.read(ViaTests::BitZero), 1);
     assert_eq!(unsafe { GLOBAL_TEST }, 1);
-}
-
-#[test]
-fn can_use_variants() {
-    let mut r = Variants::zero();
-    r.write(Variants::ThreeBits, variants::ThreeBits::FirstOn);
-    assert_eq!(r.read(Variants::ThreeBits), variants::ThreeBits::FirstOn);
 }

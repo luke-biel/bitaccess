@@ -58,7 +58,10 @@ impl BitAccess {
             .map(|field| field.const_enum(&base_type))
             .collect();
 
-        let enums: Vec<TokenStream2> = fields.iter().map(|field| field.extra_enum_access()).collect();
+        let enums: Vec<TokenStream2> = fields
+            .iter()
+            .map(|field| field.extra_enum_access(&base_type))
+            .collect();
 
         let read_impl = if read {
             let readers: Vec<_> = fields.iter().map(|item| item.reader()).collect();

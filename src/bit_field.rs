@@ -96,14 +96,14 @@ impl BitField {
         }
     }
 
-    pub fn extra_enum_access(&self) -> TokenStream2 {
+    pub fn extra_enum_access(&self, base_type: &Type) -> TokenStream2 {
         match &self.extra_enum_access {
             Some(ExtraEnumAccess::InlineEnum(InlineEnumAccess { items })) => {
                 let entries: Vec<TokenStream2> = items
                     .iter()
                     .map(|InlineEnumEntry { ident, value, .. }| {
                         quote! {
-                            #ident = #value
+                            pub const #ident: #base_type = #value;
                         }
                     })
                     .collect();
@@ -114,8 +114,11 @@ impl BitField {
                 );
 
                 quote! {
-                    enum #enum_ident {
-                        #(#entries),*
+                    pub struct #enum_ident;
+
+                    #[allow(non_upper_case_globals)]
+                    impl #enum_ident {
+                        #(#entries)*
                     }
                 }
             }
