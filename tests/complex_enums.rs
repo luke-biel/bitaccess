@@ -1,6 +1,6 @@
 use bitaccess::bitaccess;
 
-#[bitaccess(base_type = u64, kind = default)]
+#[bitaccess(base_type = u64)]
 pub enum Variants {
     #[variants(
         FirstOn  => 0b001,
