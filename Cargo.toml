@@ -1,10 +1,2 @@
-[package]
-name = "bitaccess"
-version = "0.0.0"
-authors = ["Łukasz Biel <lukasz.p.biel@gmail.com>"]
-description = "A `cargo generate` template for quick-starting a procedural macro crate"
-keywords = ["template", "proc_macro", "procmacro"]
-edition = "2021"
-
-[dependencies]
-bitaccess_macros = { path = "bitaccess_macros" }
+[workspace]
+members = ["bitaccess", "bitaccess_macros"]
