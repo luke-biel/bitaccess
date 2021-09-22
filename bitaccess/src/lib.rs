@@ -1,6 +1,7 @@
+#![no_std]
 #![feature(const_fn_trait_bound)]
 
-use std::marker::PhantomData;
+use core::marker::PhantomData;
 
 pub use bitaccess_macros::{bitaccess, FieldAccess};
 

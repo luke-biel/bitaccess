@@ -101,7 +101,7 @@ impl BitField {
                     parse_quote! { #mod_ident::#ident }
                 }
             })
-            .unwrap_or(base_type.clone());
+            .unwrap_or_else(|| base_type.clone());
 
         quote! {
             const #name: bitaccess::FieldDefinition<#base_type, #field_type> = bitaccess::FieldDefinition::new(((1 << #size) - 1) << #offset);

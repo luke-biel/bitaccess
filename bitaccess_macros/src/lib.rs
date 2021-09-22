@@ -39,6 +39,7 @@ pub fn field_access(item: TokenStream) -> TokenStream {
     let base_type: Type = btattr
         .parse_args_with(<Type as syn::parse::Parse>::parse)
         .expect("expected base_type in field_access attribute");
+
     let mut matchers = Vec::new();
     let mut val_matchers = Vec::new();
     let mut acc = 0;
@@ -83,5 +84,6 @@ pub fn field_access(item: TokenStream) -> TokenStream {
             }
         }
     };
+
     ts.into()
 }
