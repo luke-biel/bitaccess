@@ -73,7 +73,7 @@ impl BitAccess {
                     let value = self.read_raw();
                     bitaccess::Field::new(match bits.mask() {
                         #(_ if Self::#enum_field_names.mask() == bits.mask() => #readers,)*
-                        _ => panic!("Use provided consts to access register"),
+                        _ => panic!("use provided consts to read from register"),
                     })
                 }
             }
@@ -92,7 +92,7 @@ impl BitAccess {
                     let new_value: bitaccess::Field<#base_type, F> = new_value.into();
                     match bits.mask() {
                         #(_ if Self::#enum_field_names.mask() == bits.mask() => #writers,)*
-                        _ => panic!("Use provided consts to access register"),
+                        _ => panic!("use provided consts to write to register"),
                     }
                 }
             }
