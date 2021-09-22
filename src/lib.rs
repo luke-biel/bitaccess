@@ -2,7 +2,7 @@
 
 use std::marker::PhantomData;
 
-pub use bitaccess_macros::bitaccess;
+pub use bitaccess_macros::{bitaccess, FieldAccess};
 
 pub struct FieldDefinition<B, F: FieldAccess<B>> {
     mask: B,

@@ -57,7 +57,9 @@ impl BitField {
 
         Ok(Self {
             field_level_arguments: parse::<FieldLevelMacroArguments>(bit_attribute.tokens),
-            extra_enum_access: variant_attribute.map(|i| parse::<ExtraEnumAccess>(i.tokens)),
+            extra_enum_access: variant_attribute
+                .map(|i| i.parse_args_with(<ExtraEnumAccess as syn::parse::Parse>::parse))
+                .transpose()?,
             ident: variant.ident,
         })
     }

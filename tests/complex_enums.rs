@@ -1,4 +1,4 @@
-use bitaccess::bitaccess;
+use bitaccess::{bitaccess, FieldAccess};
 
 #[bitaccess(base_type = u64)]
 pub enum Variants {
@@ -11,6 +11,21 @@ pub enum Variants {
     ThreeBits,
 }
 
+#[derive(FieldAccess, PartialEq, Debug)]
+#[field_access(u32)]
+enum FourBitsVariant {
+    Case1 = 0,
+    Case2 = 8,
+    Case3 = 15,
+}
+
+#[bitaccess(base_type = u32)]
+pub enum ExternalVariants {
+    #[variants(FourBitsVariant)]
+    #[bits(0..4)]
+    FourBits,
+}
+
 #[test]
 fn can_use_variants() {
     let mut r = Variants::zero();
@@ -19,4 +34,14 @@ fn can_use_variants() {
         (&r.read(Variants::ThreeBits)).variant(),
         variants::ThreeBits::FirstOn
     );
+}
+
+#[test]
+fn can_use_external_variants() {
+    let mut r = ExternalVariants::zero();
+    r.write(ExternalVariants::FourBits, FourBitsVariant::Case3);
+    assert_eq!(
+        r.read(ExternalVariants::FourBits).variant(),
+        FourBitsVariant::Case3,
+    )
 }

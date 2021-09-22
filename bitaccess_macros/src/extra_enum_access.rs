@@ -1,6 +1,5 @@
 use proc_macro2::Ident;
 use syn::{
-    parenthesized,
     parse::{Parse, ParseStream},
     punctuated::Punctuated,
     LitInt,
@@ -25,18 +24,12 @@ pub struct InlineEnumEntry {
 
 impl Parse for ExtraEnumAccess {
     fn parse(input: ParseStream) -> syn::Result<Self> {
-        let content;
-
-        let _ = parenthesized!(content in input);
-
-        let fork = content.fork();
-        if let Ok(typ) = fork.parse() {
-            if fork.is_empty() {
-                return Ok(Self::ExternalEnum(typ));
-            }
+        if input.peek2(Token![=>]) {
+            Ok(Self::InlineEnum(input.parse()?))
+        } else {
+            let typ = input.parse()?;
+            Ok(Self::ExternalEnum(typ))
         }
-
-        Ok(Self::InlineEnum(content.parse()?))
     }
 }
 
