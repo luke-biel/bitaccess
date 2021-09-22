@@ -38,7 +38,7 @@ pub fn field_access(item: TokenStream) -> TokenStream {
         .expect("missing field_access attribute on derivec(FieldAccess)");
     let base_type: Type = btattr
         .parse_args_with(<Type as syn::parse::Parse>::parse)
-        .expect("expected base_type in field_access attribute");
+        .expect("expected base_type value in field_access attribute");
 
     let mut matchers = Vec::new();
     let mut val_matchers = Vec::new();
