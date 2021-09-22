@@ -5,11 +5,6 @@ use syn::{parse2, parse_quote, Attribute, Ident, ItemEnum, Visibility};
 
 use crate::{bit_field::BitField, top_level_macro_arguments::TopLevelMacroArguments};
 
-pub mod kw {
-    syn::custom_keyword!(base_type);
-    syn::custom_keyword!(kind);
-}
-
 pub struct BitAccess {
     top_level_arguments: TopLevelMacroArguments,
     struct_identifier: Ident,
