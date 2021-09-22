@@ -15,5 +15,8 @@ pub enum Variants {
 fn can_use_variants() {
     let mut r = Variants::zero();
     r.write(Variants::ThreeBits, variants::ThreeBits::FirstOn);
-    assert_eq!(r.read(Variants::ThreeBits), variants::ThreeBits::FirstOn);
+    assert_eq!(
+        (&r.read(Variants::ThreeBits)).variant(),
+        variants::ThreeBits::FirstOn
+    );
 }

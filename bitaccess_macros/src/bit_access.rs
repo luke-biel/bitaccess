@@ -55,7 +55,7 @@ impl BitAccess {
 
         let const_enums: Vec<_> = fields
             .iter()
-            .map(|field| field.const_enum(&base_type))
+            .map(|field| field.const_enum(&base_type, &mod_ident))
             .collect();
 
         let enums: Vec<TokenStream2> = fields
@@ -66,12 +66,15 @@ impl BitAccess {
         let read_impl = if read {
             let readers: Vec<_> = fields.iter().map(|item| item.reader()).collect();
             quote! {
-                #vis fn read(&self, bits: #base_type) -> #base_type {
+                #vis fn read<F: bitaccess::FieldAccess<#base_type>>(
+                    &self,
+                    bits: bitaccess::FieldDefinition<#base_type, F>
+                ) -> bitaccess::Field<#base_type, F> {
                     let value = self.read_raw();
-                    match bits {
-                        #(Self::#enum_field_names => #readers,)*
+                    bitaccess::Field::new(match bits.mask() {
+                        #(_ if Self::#enum_field_names.mask() == bits.mask() => #readers,)*
                         _ => panic!("Use provided consts to access register"),
-                    }
+                    })
                 }
             }
         } else {
@@ -81,10 +84,14 @@ impl BitAccess {
         let write_impl = if write {
             let writers: Vec<_> = fields.iter().map(|item| item.writer()).collect();
             quote! {
-                #vis fn write(&mut self, bits: #base_type, new_value: impl Into<#base_type>) {
-                    let new_value: #base_type = new_value.into();
-                    match bits {
-                        #(Self::#enum_field_names => #writers,)*
+                #vis fn write<F: bitaccess::FieldAccess<#base_type>>(
+                    &mut self,
+                    bits: bitaccess::FieldDefinition<#base_type, F>,
+                    new_value: impl Into<bitaccess::Field<#base_type, F>>
+                ) {
+                    let new_value: bitaccess::Field<#base_type, F> = new_value.into();
+                    match bits.mask() {
+                        #(_ if Self::#enum_field_names.mask() == bits.mask() => #writers,)*
                         _ => panic!("Use provided consts to access register"),
                     }
                 }

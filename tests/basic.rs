@@ -42,10 +42,10 @@ fn can_init_value() {
 #[test]
 fn can_read_bits_value() {
     let r = Register::new(0b1100 + (0b1101 << 4) + (0b1001 << 8));
-    assert_eq!(r.read(Register::F1), 0b1100);
-    assert_eq!(r.read(Register::F2), 0b1101);
-    assert_eq!(r.read(Register::F3), 0b1001);
-    assert_eq!(r.read(Register::ThirdBit), 1);
+    assert_eq!(r.read(Register::F1).value(), 0b1100);
+    assert_eq!(r.read(Register::F2).value(), 0b1101);
+    assert_eq!(r.read(Register::F3).value(), 0b1001);
+    assert_eq!(r.read(Register::ThirdBit).value(), 1);
 }
 
 #[test]
@@ -54,11 +54,11 @@ fn can_write_bits_value() {
     r.write(Register::F1, 0b0111u64);
     r.write(Register::F2, 0b1000u64);
     r.write(Register::F3, 0b1111u64);
-    assert_eq!(r.read(Register::F1), 0b111);
-    assert_eq!(r.read(Register::F2), 0b1000);
-    assert_eq!(r.read(Register::F3), 0b1111);
+    assert_eq!(r.read(Register::F1).value(), 0b111);
+    assert_eq!(r.read(Register::F2).value(), 0b1000);
+    assert_eq!(r.read(Register::F3).value(), 0b1111);
     assert_eq!(r.get_raw(), 0b1111_1000_0111);
-    assert_eq!(r.read(Register::ThirdBit), 1);
+    assert_eq!(r.read(Register::ThirdBit).value(), 1);
 }
 
 #[test]
@@ -72,6 +72,6 @@ fn propagates_top_level_attributes() {
 fn can_use_custom_read_via() {
     let mut r = ViaTests::new_global();
     r.write(ViaTests::BitZero, 0b1u64);
-    assert_eq!(r.read(ViaTests::BitZero), 1);
+    assert_eq!(r.read(ViaTests::BitZero).value(), 1);
     assert_eq!(unsafe { GLOBAL_TEST }, 1);
 }
