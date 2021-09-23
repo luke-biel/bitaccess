@@ -3,8 +3,10 @@ name = "bitaccess_macros"
 version = "0.1.0"
 authors = ["Łukasz Biel <lukasz.p.biel@gmail.com>"]
 description = "Bitfield accessor macro intestines"
-keywords = ["proc_macro", "procmacro"]
+keywords = ["macros"]
 edition = "2021"
+license = "MIT OR Apache-2.0"
+readme = "../README"
 
 [lib]
 proc-macro = true
