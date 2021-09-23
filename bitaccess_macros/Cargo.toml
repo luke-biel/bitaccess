@@ -6,7 +6,7 @@ description = "Bitfield accessor macro intestines"
 keywords = ["macros"]
 edition = "2021"
 license = "MIT OR Apache-2.0"
-readme = "../README"
+readme = "../README.md"
 
 [lib]
 proc-macro = true
