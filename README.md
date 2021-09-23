@@ -31,8 +31,8 @@ pub enum Daif {
 /// It's here just to show power of the macro.
 fn main() {
     let mut daif = Daif::new_global();
-    println!("Daif IRQ: {:?}", daif.read(Daif::I));
+    println!("Daif IRQ: {:?}", daif.read(Daif::I).variant());
     daif.write(Daif::I, Mask::Unmasked);
-    println!("Daif IRQ: {:?}", daif.read(Daif::I));
+    println!("Daif IRQ: {:?}", daif.read(Daif::I).variant());
 }
 ```
