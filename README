@@ -1,5 +1,7 @@
 # Bitaccess
 
+> Currently, works only on nightly rust :c
+
 A small crate that helps with lack of bitfield accessors in rust language.
 Example usage:
 ```rust
