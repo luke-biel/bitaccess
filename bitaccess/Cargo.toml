@@ -10,4 +10,4 @@ license = "MIT OR Apache-2.0"
 readme = "../README"
 
 [dependencies]
-bitaccess_macros = { path = "../bitaccess_macros", version = "*" }
+bitaccess_macros = { path = "../bitaccess_macros", version = "0.1.0" }
