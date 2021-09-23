@@ -16,6 +16,11 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: nightly
+        components: clippy, fmt
+        override: true
     - name: Run clippy
       run: cargo clippy --verbose
     - name: Run rustfmt
