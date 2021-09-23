@@ -30,13 +30,13 @@ pub enum ViaTests {
 #[test]
 fn initializes_to_zero() {
     let r = Register::zero();
-    assert_eq!(r.get_raw(), 0)
+    assert_eq!(r.get(), 0)
 }
 
 #[test]
 fn can_init_value() {
     let r = Register::new(0b1100 + (0b1101 << 4) + (0b1001 << 8));
-    assert_eq!(r.get_raw(), 0b1001_1101_1100)
+    assert_eq!(r.get(), 0b1001_1101_1100)
 }
 
 #[test]
@@ -57,7 +57,7 @@ fn can_write_bits_value() {
     assert_eq!(r.read(Register::F1).value(), 0b111);
     assert_eq!(r.read(Register::F2).value(), 0b1000);
     assert_eq!(r.read(Register::F3).value(), 0b1111);
-    assert_eq!(r.get_raw(), 0b1111_1000_0111);
+    assert_eq!(r.get(), 0b1111_1000_0111);
     assert_eq!(r.read(Register::ThirdBit).value(), 1);
 }
 

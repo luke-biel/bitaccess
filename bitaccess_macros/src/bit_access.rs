@@ -101,6 +101,11 @@ impl BitAccess {
             TokenStream2::new()
         };
 
+        let representation_ident = Ident::new(
+            &format!("{}Representation", ident.to_string().to_case(Case::Pascal)),
+            ident.span(),
+        );
+
         let constructors = if read_via.is_none() && write_via.is_none() {
             quote! {
                 #vis fn zero() -> Self {
@@ -116,8 +121,50 @@ impl BitAccess {
                 #vis fn new_global() -> Self {
                     Self { inner: #private_ident {}, }
                 }
+
+                #vis fn fetch() -> super::#representation_ident {
+                    let me = Self::new_global();
+                    super::#representation_ident::new(me.read_raw())
+                }
             }
         };
+
+        let fetch = if read_via.is_some() || write_via.is_some() {
+            quote! {
+                #vis struct #representation_ident {
+                    value: #base_type,
+                }
+
+
+                #[allow(non_upper_case_globals)]
+                impl #representation_ident {
+                    #(#const_enums)*
+                }
+            }
+        } else {
+            TokenStream2::new()
+        };
+
+        let fetch_mod = if read_via.is_some() || write_via.is_some() {
+            quote! {
+                impl super::#representation_ident {
+                    pub fn new(value: #base_type) -> Self {
+                        Self {
+                            value,
+                        }
+                    }
+
+                    fn read_raw(&self) -> #base_type {
+                        self.value
+                    }
+
+                    #read_impl
+                }
+            }
+        } else {
+            TokenStream2::new()
+        };
+
         let read_via = read_via.unwrap_or_else(|| parse_quote! { value = self.inner.value });
         let write_via = write_via.unwrap_or_else(|| parse_quote! { self.inner.value = value });
 
@@ -160,11 +207,15 @@ impl BitAccess {
                         #write_via
                     }
 
-                    #vis fn get_raw(&self) -> #base_type {
+                    #vis fn get(&self) -> #base_type {
                         self.read_raw()
                     }
                 }
+
+                #fetch_mod
             }
+
+            #fetch
         }
     }
 }
