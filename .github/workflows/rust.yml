@@ -19,7 +19,7 @@ jobs:
     - uses: actions-rs/toolchain@v1
       with:
         toolchain: nightly
-        components: clippy, fmt
+        components: clippy, rustfmt
         override: true
     - name: Run clippy
       run: cargo clippy --verbose
