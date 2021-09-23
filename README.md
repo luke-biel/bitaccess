@@ -21,10 +21,10 @@ pub enum Mask {
     write_via = r#"unsafe { asm!("msr daif, {}", in(reg) value, options(nostack, nomem)); }"#
 )]
 pub enum Daif {
-    #[bit(9)] D,
-    #[bit(8)] A,
-    #[bit(7)] I,
-    #[bit(6)] F,
+    #[bit(9)] #[variants(Mask)] D,
+    #[bit(8)] #[variants(Mask)] A,
+    #[bit(7)] #[variants(Mask)] I,
+    #[bit(6)] #[variants(Mask)] F,
 }
 
 /// DAIF is an ARM register, so this example is not really suited for running on all machines.
