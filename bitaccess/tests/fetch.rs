@@ -53,5 +53,8 @@ fn fetches_whole_struct() {
         val.read(ViaTests::InlineVariants).variant(),
         via_tests::InlineVariants::Fib3
     );
-    assert_eq!(val.read(ViaTests::ExternalVariants).variant(), ExternalVariant::Fib6);
+    assert_eq!(
+        val.read(ViaTests::ExternalVariants).variant(),
+        ExternalVariant::Fib6
+    );
 }
