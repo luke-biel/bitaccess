@@ -50,12 +50,12 @@ impl BitAccess {
 
         let const_enums: Vec<_> = fields
             .iter()
-            .map(|field| field.const_enum(&base_type, &mod_ident))
+            .map(|field| field.const_enum(&vis, &base_type))
             .collect();
 
         let enums: Vec<TokenStream2> = fields
             .iter()
-            .map(|field| field.extra_enum_access(&base_type))
+            .map(|field| field.extra_enum_access(&vis, &base_type))
             .collect();
 
         let read_impl = if read {
@@ -179,9 +179,9 @@ impl BitAccess {
                 #(#const_enums)*
             }
 
-            #vis mod #mod_ident {
-                #(#enums)*
+            #(#enums)*
 
+            #vis mod #mod_ident {
                 #[allow(non_camel_case_types)]
                 #(#attributes)*
                 pub(super) struct #private_ident {

@@ -1,7 +1,7 @@
 use convert_case::{Case, Casing};
 use proc_macro2::{Ident, TokenStream as TokenStream2};
 use quote::quote;
-use syn::{parse_quote, parse_quote::parse, punctuated::Punctuated, Token, Type, Variant};
+use syn::{parse_quote, parse_quote::parse, punctuated::Punctuated, Token, Type, Variant, Visibility};
 
 use crate::{
     extra_enum_access::{ExtraEnumAccess, InlineEnumAccess, InlineEnumEntry},
@@ -84,7 +84,7 @@ impl BitField {
         }
     }
 
-    pub fn const_enum(&self, base_type: &Type, mod_ident: &Ident) -> TokenStream2 {
+    pub fn const_enum(&self, vis: &Visibility, base_type: &Type) -> TokenStream2 {
         let Self {
             field_level_arguments: FieldLevelMacroArguments { offset, size },
             ident,
@@ -98,17 +98,17 @@ impl BitField {
                 ExtraEnumAccess::ExternalEnum(typ) => typ.clone(),
                 ExtraEnumAccess::InlineEnum(_) => {
                     let ident = self.inline_enum_ident();
-                    parse_quote! { #mod_ident::#ident }
+                    parse_quote! { #ident }
                 }
             })
             .unwrap_or_else(|| base_type.clone());
 
         quote! {
-            const #name: bitaccess::FieldDefinition<#base_type, #field_type> = bitaccess::FieldDefinition::new(((1 << #size) - 1) << #offset);
+            #vis const #name: bitaccess::FieldDefinition<#base_type, #field_type> = bitaccess::FieldDefinition::new(((1 << #size) - 1) << #offset);
         }
     }
 
-    pub fn extra_enum_access(&self, base_type: &Type) -> TokenStream2 {
+    pub fn extra_enum_access(&self, vis: &Visibility, base_type: &Type) -> TokenStream2 {
         match &self.extra_enum_access {
             Some(ExtraEnumAccess::InlineEnum(InlineEnumAccess { items })) => {
                 let entries: Vec<TokenStream2> = items
@@ -142,7 +142,7 @@ impl BitField {
 
                 quote! {
                     #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-                    pub enum #enum_ident {
+                    #vis enum #enum_ident {
                         #(#entries),*
                     }
 

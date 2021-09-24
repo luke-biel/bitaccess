@@ -51,7 +51,7 @@ fn fetches_whole_struct() {
     assert_eq!(val.read(ViaTests::BitsTwoThree).value(), 0b01);
     assert_eq!(
         val.read(ViaTests::InlineVariants).variant(),
-        via_tests::InlineVariants::Fib3
+        InlineVariants::Fib3
     );
     assert_eq!(
         val.read(ViaTests::ExternalVariants).variant(),

@@ -13,7 +13,7 @@ pub enum Variants {
 
 #[derive(FieldAccess, PartialEq, Debug)]
 #[field_access(u32)]
-enum FourBitsVariant {
+pub enum FourBitsVariant {
     Case1 = 0,
     Case2 = 8,
     Case3 = 15,
@@ -29,10 +29,10 @@ pub enum ExternalVariants {
 #[test]
 fn can_use_variants() {
     let mut r = Variants::zero();
-    r.write(Variants::ThreeBits, variants::ThreeBits::FirstOn);
+    r.write(Variants::ThreeBits, ThreeBits::FirstOn);
     assert_eq!(
         (&r.read(Variants::ThreeBits)).variant(),
-        variants::ThreeBits::FirstOn
+        ThreeBits::FirstOn
     );
 }
 
