@@ -210,6 +210,10 @@ impl BitAccess {
                     #vis fn get(&self) -> #base_type {
                         self.read_raw()
                     }
+
+                    #vis fn set(&mut self, new_value: #base_type) {
+                        self.write_raw(new_value)
+                    }
                 }
 
                 #fetch_mod

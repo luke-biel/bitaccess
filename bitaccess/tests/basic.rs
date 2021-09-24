@@ -40,6 +40,13 @@ fn can_init_value() {
 }
 
 #[test]
+fn can_set_value() {
+    let mut r = Register::zero();
+    r.set(0b1100 + (0b1101 << 4) + (0b1001 << 8));
+    assert_eq!(r.get(), 0b1001_1101_1100)
+}
+
+#[test]
 fn can_read_bits_value() {
     let r = Register::new(0b1100 + (0b1101 << 4) + (0b1001 << 8));
     assert_eq!(r.read(Register::F1).value(), 0b1100);
