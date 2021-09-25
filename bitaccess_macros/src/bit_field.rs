@@ -1,7 +1,15 @@
 use convert_case::{Case, Casing};
 use proc_macro2::{Ident, TokenStream as TokenStream2};
 use quote::quote;
-use syn::{parse_quote, parse_quote::parse, punctuated::Punctuated, Token, Type, Variant, Visibility};
+use syn::{
+    parse_quote,
+    parse_quote::parse,
+    punctuated::Punctuated,
+    Token,
+    Type,
+    Variant,
+    Visibility,
+};
 
 use crate::{
     extra_enum_access::{ExtraEnumAccess, InlineEnumAccess, InlineEnumEntry},

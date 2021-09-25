@@ -30,10 +30,7 @@ pub enum ExternalVariants {
 fn can_use_variants() {
     let mut r = Variants::zero();
     r.write(Variants::ThreeBits, ThreeBits::FirstOn);
-    assert_eq!(
-        (&r.read(Variants::ThreeBits)).variant(),
-        ThreeBits::FirstOn
-    );
+    assert_eq!((&r.read(Variants::ThreeBits)).variant(), ThreeBits::FirstOn);
 }
 
 #[test]

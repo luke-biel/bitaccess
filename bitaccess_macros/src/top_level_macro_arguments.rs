@@ -16,12 +16,24 @@ mod kw {
     syn::custom_keyword!(read_via);
 }
 
+pub struct GlobalReadOnly {
+    pub read_via: Expr,
+}
+
+pub struct GlobalReadWrite {
+    pub read_via: Expr,
+    pub write_via: Expr,
+}
+
+pub enum Implementation {
+    Inline(KindArg),
+    GlobalReadOnly(Box<GlobalReadOnly>),
+    GlobalReadWrite(Box<GlobalReadWrite>),
+}
+
 pub struct TopLevelMacroArguments {
     pub base_type: Type,
-    pub read: bool,
-    pub write: bool,
-    pub write_via: Option<Expr>,
-    pub read_via: Option<Expr>,
+    pub implementation: Implementation,
 }
 
 #[derive(Default)]
@@ -152,17 +164,59 @@ impl TopLevelMacroArgumentsBuilder {
         } else {
             proc_macro_error::abort_call_site!("missing `base_type` on bitaccess enum")
         };
-        let KindArg { read, write } = self.kind.unwrap_or(KindArg {
+
+        let kind = self.kind.unwrap_or(KindArg {
             read: true,
             write: true,
         });
 
+        let implementation = match (self.read_via, self.write_via, kind) {
+            (None, None, kind) => Implementation::Inline(kind),
+            (
+                Some(read_via),
+                Some(write_via),
+                KindArg {
+                    read: true,
+                    write: true,
+                },
+            ) => Implementation::GlobalReadWrite(box GlobalReadWrite {
+                read_via,
+                write_via,
+            }),
+            (
+                Some(read_via),
+                None,
+                KindArg {
+                    read: true,
+                    write: false,
+                },
+            ) => Implementation::GlobalReadOnly(box GlobalReadOnly { read_via }),
+            _ => proc_macro_error::abort_call_site!(
+                "invalid combination of `kind` (default is `RW`), `read_via` and `write_via`"
+            ),
+        };
+
         TopLevelMacroArguments {
             base_type,
-            read,
-            write,
-            write_via: self.write_via,
-            read_via: self.read_via,
+            implementation,
+        }
+    }
+}
+
+impl TopLevelMacroArguments {
+    pub fn is_read(&self) -> bool {
+        match self.implementation {
+            Implementation::Inline(KindArg { read, .. }) => read,
+            Implementation::GlobalReadOnly(_) => true,
+            Implementation::GlobalReadWrite(_) => true,
+        }
+    }
+
+    pub fn is_write(&self) -> bool {
+        match self.implementation {
+            Implementation::Inline(KindArg { write, .. }) => write,
+            Implementation::GlobalReadOnly(_) => false,
+            Implementation::GlobalReadWrite(_) => true,
         }
     }
 }
