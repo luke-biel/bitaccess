@@ -1,6 +1,6 @@
 [package]
 name = "bitaccess"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["Łukasz Biel <lukasz.p.biel@gmail.com>"]
 description = "Bitfield access macro and utils"
 keywords = ["macros", "no_std", "embedded"]
@@ -10,4 +10,4 @@ license = "MIT OR Apache-2.0"
 readme = "../README.md"
 
 [dependencies]
-bitaccess_macros = { path = "../bitaccess_macros", version = "0.2.0" }
+bitaccess_macros = { path = "../bitaccess_macros", version = "0.3.0" }

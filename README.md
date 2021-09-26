@@ -1,6 +1,6 @@
 # Bitaccess
 
-> Currently, works only on nightly rust :c
+> Unfortunately, works only on nightly rust :c
 
 A small crate that helps with lack of bitfield accessors in rust language.
 Example usage:
@@ -30,9 +30,14 @@ pub enum Daif {
 /// DAIF is an ARM register, so this example is not really suited for running on all machines.
 /// It's here just to show power of the macro.
 fn main() {
-    let mut daif = Daif::new_global();
+    let mut daif = Daif::new();
     println!("Daif IRQ: {:?}", daif.read(Daif::I).variant());
     daif.write(Daif::I, Mask::Unmasked);
     println!("Daif IRQ: {:?}", daif.read(Daif::I).variant());
 }
 ```
+
+For more specific examples, please refer to [tests](bitaccess/tests).
+
+## WIP status
+This is pretty much experiment. I'm gonna try to keep breaking changes to a minimum, but it's possible that there will be more than one pre-1.0.

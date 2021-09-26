@@ -1,6 +1,6 @@
 [package]
 name = "bitaccess_macros"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["Łukasz Biel <lukasz.p.biel@gmail.com>"]
 description = "Bitfield accessor macro intestines"
 keywords = ["macros"]
