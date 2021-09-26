@@ -96,13 +96,10 @@ impl BitAccess {
 
     fn private_struct_definition(&self, private_struct_ident: &Ident) -> TokenStream {
         let base_type = &self.top_level_arguments.base_type;
-        let private_value_holder =
-            if self.top_level_arguments.is_read() && self.top_level_arguments.is_write() {
-                quote! { value: #base_type }
-            } else {
-                TokenStream2::new()
-            };
-
+        let private_value_holder = match self.top_level_arguments.implementation {
+            Implementation::Inline(_) => Some(quote! { value: #base_type }),
+            _ => None,
+        };
         let attributes = &self.attributes;
 
         quote! {
@@ -274,7 +271,7 @@ impl BitAccess {
                     }
 
                     #vis fn fetch() -> super::#representation_ident {
-                        let me = Self::new_global();
+                        let me = Self::new();
                         super::#representation_ident::new(me.read_raw())
                     }
                 }

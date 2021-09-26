@@ -29,26 +29,26 @@ pub enum ViaTests {
 
 #[test]
 fn initializes_to_zero() {
-    let r = Register::zero();
+    let r = Register::new();
     assert_eq!(r.get(), 0)
 }
 
 #[test]
 fn can_init_value() {
-    let r = Register::new(0b1100 + (0b1101 << 4) + (0b1001 << 8));
+    let r = Register::from_value(0b1100 + (0b1101 << 4) + (0b1001 << 8));
     assert_eq!(r.get(), 0b1001_1101_1100)
 }
 
 #[test]
 fn can_set_value() {
-    let mut r = Register::zero();
+    let mut r = Register::new();
     r.set(0b1100 + (0b1101 << 4) + (0b1001 << 8));
     assert_eq!(r.get(), 0b1001_1101_1100)
 }
 
 #[test]
 fn can_read_bits_value() {
-    let r = Register::new(0b1100 + (0b1101 << 4) + (0b1001 << 8));
+    let r = Register::from_value(0b1100 + (0b1101 << 4) + (0b1001 << 8));
     assert_eq!(r.read(Register::F1).value(), 0b1100);
     assert_eq!(r.read(Register::F2).value(), 0b1101);
     assert_eq!(r.read(Register::F3).value(), 0b1001);
@@ -57,7 +57,7 @@ fn can_read_bits_value() {
 
 #[test]
 fn can_write_bits_value() {
-    let mut r = Register::zero();
+    let mut r = Register::new();
     r.write(Register::F1, 0b0111u64);
     r.write(Register::F2, 0b1000u64);
     r.write(Register::F3, 0b1111u64);
@@ -70,14 +70,14 @@ fn can_write_bits_value() {
 
 #[test]
 fn propagates_top_level_attributes() {
-    let v1 = Register::new(123);
+    let v1 = Register::from_value(123);
     let v2 = v1.clone();
     assert_eq!(v1, v2);
 }
 
 #[test]
 fn can_use_custom_read_via() {
-    let mut r = ViaTests::new_global();
+    let mut r = ViaTests::new();
     r.write(ViaTests::BitZero, 0b1u64);
     assert_eq!(r.read(ViaTests::BitZero).value(), 1);
     assert_eq!(unsafe { GLOBAL_TEST }, 1);

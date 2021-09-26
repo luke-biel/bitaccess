@@ -28,14 +28,14 @@ pub enum ExternalVariants {
 
 #[test]
 fn can_use_variants() {
-    let mut r = Variants::zero();
+    let mut r = Variants::new();
     r.write(Variants::ThreeBits, ThreeBits::FirstOn);
     assert_eq!((&r.read(Variants::ThreeBits)).variant(), ThreeBits::FirstOn);
 }
 
 #[test]
 fn can_use_external_variants() {
-    let mut r = ExternalVariants::zero();
+    let mut r = ExternalVariants::new();
     r.write(ExternalVariants::FourBits, FourBitsVariant::Case3);
     assert_eq!(
         r.read(ExternalVariants::FourBits).variant(),
