@@ -7,6 +7,7 @@ keywords = ["macros"]
 edition = "2021"
 license = "MIT OR Apache-2.0"
 readme = "../README.md"
+repository = "https://github.com/luke-biel/bitaccess"
 
 [lib]
 proc-macro = true
