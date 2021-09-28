@@ -37,7 +37,7 @@ fn main() {
 }
 ```
 
-For more specific examples, please refer to [tests](bitaccess/tests).
+For more specific examples, please refer to [tests](https://github.com/luke-biel/bitaccess/tests).
 
 ## WIP status
 This is pretty much experiment. I'm gonna try to keep breaking changes to a minimum, but it's possible that there will be more than one pre-1.0.
