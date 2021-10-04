@@ -21,9 +21,10 @@ mod top_level_macro_arguments;
 pub fn bitaccess(args: TokenStream, input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as ItemEnum);
 
-    let tokens = BitAccess::new(args.into(), input)
-        .expect("BitAccess::new")
-        .into_token_stream();
+    let tokens = match BitAccess::new(args.into(), input) {
+        Ok(tokens) => tokens.into_token_stream(),
+        Err(err) => return err.to_compile_error().into(),
+    };
 
     tokens.into()
 }
