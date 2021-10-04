@@ -345,6 +345,9 @@ impl BitAccess {
                         #read_impl
                         #write_impl
 
+                        pub fn get(&self) -> #base_type {
+                            self.value
+                        }
                     }
             }),
         }
