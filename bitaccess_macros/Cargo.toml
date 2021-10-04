@@ -2,7 +2,7 @@
 name = "bitaccess_macros"
 version = "0.3.0"
 authors = ["Łukasz Biel <lukasz.p.biel@gmail.com>"]
-description = "Bitfield accessor macro intestines"
+description = "bitaccess macro implementations (use `bitaccess` instead of this)"
 keywords = ["macros"]
 edition = "2021"
 license = "MIT OR Apache-2.0"

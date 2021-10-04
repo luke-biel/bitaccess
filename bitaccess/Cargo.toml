@@ -2,7 +2,7 @@
 name = "bitaccess"
 version = "0.3.0"
 authors = ["Łukasz Biel <lukasz.p.biel@gmail.com>"]
-description = "Bitfield access macro and utils"
+description = "Macro for efficient and type-checked access to individual bits of a variable"
 keywords = ["macros", "no_std", "embedded"]
 categories = ["data-structures"]
 edition = "2021"
