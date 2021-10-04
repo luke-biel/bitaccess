@@ -58,3 +58,28 @@ fn fetches_whole_struct() {
         ExternalVariant::Fib6
     );
 }
+
+#[test]
+fn provides_write_api() {
+    unsafe {
+        GLOBAL_TEST = 0b1101_0011_0111;
+    }
+    let mut val = ViaTests::fetch();
+
+    assert_eq!(val.read(ViaTests::BitZero).value(), 1);
+    assert_eq!(val.read(ViaTests::BitOne).value(), 1);
+    assert_eq!(val.read(ViaTests::BitsTwoThree).value(), 0b01);
+    assert_eq!(
+        val.read(ViaTests::InlineVariants).variant(),
+        InlineVariants::Fib3
+    );
+    assert_eq!(
+        val.read(ViaTests::ExternalVariants).variant(),
+        ExternalVariant::Fib6
+    );
+    val.write_to_cache(ViaTests::BitZero, 0);
+    assert_eq!(val.read(ViaTests::BitZero).value(), 0);
+
+    let val = ViaTests::fetch();
+    assert_eq!(val.read(ViaTests::BitZero).value(), 1);
+}

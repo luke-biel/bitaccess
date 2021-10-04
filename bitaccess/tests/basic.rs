@@ -82,3 +82,19 @@ fn can_use_custom_read_via() {
     assert_eq!(r.read(ViaTests::BitZero).value(), 1);
     assert_eq!(unsafe { GLOBAL_TEST }, 1);
 }
+
+#[test]
+fn can_zero_fields() {
+    let mut r = Register::from_value(0b1111_0000);
+    r.write(Register::F2, 0);
+    assert_eq!(r.read(Register::F2).value(), 0);
+}
+
+#[test]
+fn set_overwrites_value() {
+    let mut r = Register::from_value(0b1111_0000);
+    r.set(0);
+    r.set(1);
+    r.set(0b10);
+    assert_eq!(r.get(), 0b10);
+}

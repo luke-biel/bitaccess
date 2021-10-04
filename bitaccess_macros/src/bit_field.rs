@@ -88,7 +88,7 @@ impl BitField {
             ..
         } = self;
         quote! {
-            self.write_raw((new_value.value() & (bits.mask() >> #offset)) << #offset)
+            self.write_raw((new_value.value() & (bits.mask() >> #offset)) << #offset, bits.mask())
         }
     }
 

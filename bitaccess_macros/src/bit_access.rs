@@ -198,26 +198,22 @@ impl BitAccess {
         &self,
         enum_field_names: impl Iterator<Item = &'a Ident>,
     ) -> TokenStream2 {
-        if self.top_level_arguments.is_read() {
-            let readers: Vec<_> = self.fields.iter().map(|item| item.reader()).collect();
-            let vis = &self.struct_visibility;
-            let base_type = &self.top_level_arguments.base_type;
-            let ident = &self.struct_identifier;
+        let readers: Vec<_> = self.fields.iter().map(|item| item.reader()).collect();
+        let vis = &self.struct_visibility;
+        let base_type = &self.top_level_arguments.base_type;
+        let ident = &self.struct_identifier;
 
-            quote! {
-                #vis fn read<F: bitaccess::FieldAccess<#base_type>>(
-                    &self,
-                    bits: bitaccess::FieldDefinition<#base_type, F>
-                ) -> bitaccess::Field<#base_type, F> {
-                    let value = self.read_raw();
-                    bitaccess::Field::new(match bits.mask() {
-                        #(_ if super::#ident::#enum_field_names.mask() == bits.mask() => #readers,)*
-                        _ => panic!("use provided consts to read from register"),
-                    })
-                }
+        quote! {
+            #vis fn read<F: bitaccess::FieldAccess<#base_type>>(
+                &self,
+                bits: bitaccess::FieldDefinition<#base_type, F>
+            ) -> bitaccess::Field<#base_type, F> {
+                let value = self.read_raw();
+                bitaccess::Field::new(match bits.mask() {
+                    #(_ if super::#ident::#enum_field_names.mask() == bits.mask() => #readers,)*
+                    _ => panic!("use provided consts to read from register"),
+                })
             }
-        } else {
-            TokenStream2::new()
         }
     }
 
@@ -244,6 +240,31 @@ impl BitAccess {
             TokenStream2::new()
         }
     }
+
+    fn immutable_representation_write_impl<'a>(
+        &self,
+        enum_field_names: impl Iterator<Item = &'a Ident>,
+    ) -> TokenStream2 {
+        let writers: Vec<_> = self.fields.iter().map(|item| item.writer()).collect();
+        let vis = &self.struct_visibility;
+        let base_type = &self.top_level_arguments.base_type;
+        let ident = &self.struct_identifier;
+
+        quote! {
+            #vis fn write_to_cache<F: bitaccess::FieldAccess<#base_type>>(
+                &mut self,
+                bits: bitaccess::FieldDefinition<#base_type, F>,
+                new_value: impl Into<bitaccess::Field<#base_type, F>>
+            ) {
+                let new_value: bitaccess::Field<#base_type, F> = new_value.into();
+                match bits.mask() {
+                    #(_ if super::#ident::#enum_field_names.mask() == bits.mask() => #writers,)*
+                    _ => panic!("use provided consts to write to register"),
+                }
+            }
+        }
+    }
+
     fn constructors(
         &self,
         private_struct_ident: &Ident,
@@ -301,6 +322,7 @@ impl BitAccess {
     ) -> Option<TokenStream2> {
         let base_type = &self.top_level_arguments.base_type;
         let read_impl = self.immutable_representation_read_impl(enum_field_names.iter());
+        let write_impl = self.immutable_representation_write_impl(enum_field_names.iter());
 
         match self.top_level_arguments.implementation {
             Implementation::Inline(_) => None,
@@ -316,7 +338,13 @@ impl BitAccess {
                             self.value
                         }
 
+                        fn write_raw(&mut self, new_value: #base_type, mask: #base_type) {
+                            self.value = (self.value & !(mask)) | new_value;
+                        }
+
                         #read_impl
+                        #write_impl
+
                     }
             }),
         }
@@ -368,14 +396,14 @@ impl BitAccess {
             let vis = &self.struct_visibility;
 
             quote! {
-                fn write_raw(&mut self, new_value: #base_type) {
-                    let old_value = self.read_raw();
+                fn write_raw(&mut self, new_value: #base_type, mask: #base_type) {
+                    let old_value = self.read_raw() & !(mask);
                     let value = old_value | new_value;
                     #write_via
                 }
 
-                #vis fn set(&mut self, new_value: #base_type) {
-                    self.write_raw(new_value)
+                #vis fn set(&mut self, value: #base_type) {
+                    #write_via
                 }
             }
         })
