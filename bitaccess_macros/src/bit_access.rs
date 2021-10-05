@@ -371,7 +371,7 @@ impl BitAccess {
 
             quote! {
                 fn read_raw(&self) -> #base_type {
-                    let value: #base_type;
+                    let mut value: #base_type;
                     #read_via;
                     value
                 }
@@ -401,7 +401,7 @@ impl BitAccess {
             quote! {
                 fn write_raw(&mut self, new_value: #base_type, mask: #base_type) {
                     let old_value = self.read_raw() & !(mask);
-                    let value = old_value | new_value;
+                    let mut value = old_value | new_value;
                     #write_via
                 }
 
