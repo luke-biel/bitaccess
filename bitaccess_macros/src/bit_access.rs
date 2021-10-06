@@ -179,6 +179,7 @@ impl BitAccess {
             let base_type = &self.top_level_arguments.base_type;
 
             quote! {
+                #[allow(unreachable_code)]
                 #vis fn read<F: bitaccess::FieldAccess<#base_type>>(
                     &self,
                     bits: bitaccess::FieldDefinition<#base_type, F>
@@ -205,6 +206,7 @@ impl BitAccess {
         let ident = &self.struct_identifier;
 
         quote! {
+            #[allow(unreachable_code)]
             #vis fn read<F: bitaccess::FieldAccess<#base_type>>(
                 &self,
                 bits: bitaccess::FieldDefinition<#base_type, F>
@@ -225,6 +227,7 @@ impl BitAccess {
             let base_type = &self.top_level_arguments.base_type;
 
             quote! {
+                #[allow(unreachable_code)]
                 #vis fn write<F: bitaccess::FieldAccess<#base_type>>(
                     &mut self,
                     bits: bitaccess::FieldDefinition<#base_type, F>,
@@ -252,6 +255,7 @@ impl BitAccess {
         let ident = &self.struct_identifier;
 
         quote! {
+            #[allow(unreachable_code)]
             #vis fn write_to_cache<F: bitaccess::FieldAccess<#base_type>>(
                 &mut self,
                 bits: bitaccess::FieldDefinition<#base_type, F>,
