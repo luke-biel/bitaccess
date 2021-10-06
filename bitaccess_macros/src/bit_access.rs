@@ -8,6 +8,7 @@ use crate::{
     top_level_macro_arguments::{
         GlobalReadOnly,
         GlobalReadWrite,
+        GlobalWriteOnly,
         Implementation,
         KindArg,
         TopLevelMacroArguments,
@@ -285,6 +286,13 @@ impl BitAccess {
                     }
                 }
             }
+            Implementation::GlobalWriteOnly(_) => {
+                quote! {
+                    #vis fn new() -> Self {
+                        Self { inner: #private_struct_ident {}, }
+                    }
+                }
+            }
             _ => {
                 quote! {
                     #vis fn new() -> Self {
@@ -363,7 +371,7 @@ impl BitAccess {
             Implementation::GlobalReadWrite(box GlobalReadWrite { read_via, .. }) => {
                 Some(read_via.to_token_stream())
             }
-            Implementation::Inline(_) => None,
+            Implementation::GlobalWriteOnly(_) | Implementation::Inline(_) => None,
         };
         read_via.map(|read_via| {
             let base_type = &self.top_level_arguments.base_type;
@@ -391,19 +399,33 @@ impl BitAccess {
             Implementation::GlobalReadWrite(box GlobalReadWrite { write_via, .. }) => {
                 Some(write_via.to_token_stream())
             }
-            Implementation::Inline(_)
-            | Implementation::GlobalReadOnly(box GlobalReadOnly { .. }) => None,
+            Implementation::GlobalWriteOnly(box GlobalWriteOnly { write_via }) => {
+                Some(write_via.to_token_stream())
+            }
+            Implementation::Inline(_) | Implementation::GlobalReadOnly(_) => None,
         };
         write_via.map(|write_via| {
             let base_type = &self.top_level_arguments.base_type;
             let vis = &self.struct_visibility;
 
-            quote! {
-                fn write_raw(&mut self, new_value: #base_type, mask: #base_type) {
-                    let old_value = self.read_raw() & !(mask);
-                    let mut value = old_value | new_value;
-                    #write_via
+            let write_raw = if self.top_level_arguments.is_read() {
+                quote! {
+                    fn write_raw(&mut self, new_value: #base_type, mask: #base_type) {
+                        let old_value = self.read_raw() & !(mask);
+                        let mut value = old_value | new_value;
+                        #write_via
+                    }
                 }
+            } else {
+                quote! {
+                    fn write_raw(&mut self, value: #base_type, _: #base_type) {
+                        #write_via
+                    }
+                }
+            };
+
+            quote! {
+                #write_raw
 
                 #vis fn set(&mut self, value: #base_type) {
                     #write_via

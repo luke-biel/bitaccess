@@ -25,10 +25,15 @@ pub struct GlobalReadWrite {
     pub write_via: Expr,
 }
 
+pub struct GlobalWriteOnly {
+    pub write_via: Expr,
+}
+
 pub enum Implementation {
     Inline(KindArg),
     GlobalReadOnly(Box<GlobalReadOnly>),
     GlobalReadWrite(Box<GlobalReadWrite>),
+    GlobalWriteOnly(Box<GlobalWriteOnly>),
 }
 
 pub struct TopLevelMacroArguments {
@@ -191,8 +196,16 @@ impl TopLevelMacroArgumentsBuilder {
                     write: false,
                 },
             ) => Implementation::GlobalReadOnly(box GlobalReadOnly { read_via }),
+            (
+                None,
+                Some(write_via),
+                KindArg {
+                    read: false,
+                    write: true,
+                },
+            ) => Implementation::GlobalWriteOnly(box GlobalWriteOnly { write_via }),
             _ => proc_macro_error::abort_call_site!(
-                "invalid combination of `kind` (default is `RW`), `read_via` and `write_via`"
+                "invalid combination of `kind`, `read_via` and `write_via`"
             ),
         };
 
@@ -209,6 +222,7 @@ impl TopLevelMacroArguments {
             Implementation::Inline(KindArg { read, .. }) => read,
             Implementation::GlobalReadOnly(_) => true,
             Implementation::GlobalReadWrite(_) => true,
+            Implementation::GlobalWriteOnly(_) => false,
         }
     }
 
@@ -217,6 +231,7 @@ impl TopLevelMacroArguments {
             Implementation::Inline(KindArg { write, .. }) => write,
             Implementation::GlobalReadOnly(_) => false,
             Implementation::GlobalReadWrite(_) => true,
+            Implementation::GlobalWriteOnly(_) => true,
         }
     }
 }

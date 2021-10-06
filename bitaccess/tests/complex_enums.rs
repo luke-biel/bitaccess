@@ -26,6 +26,14 @@ pub enum ExternalVariants {
     FourBits,
 }
 
+static mut FIELD: u32 = 0;
+
+#[bitaccess(base_type = u32, kind = write_only, write_via = "unsafe { crate::FIELD = value }")]
+pub enum WriteOnly {
+    #[bits(0..16)]
+    Field,
+}
+
 #[test]
 fn can_use_variants() {
     let mut r = Variants::new();
@@ -41,4 +49,12 @@ fn can_use_external_variants() {
         r.read(ExternalVariants::FourBits).variant(),
         FourBitsVariant::Case3,
     )
+}
+
+#[test]
+fn can_be_write_only() {
+    let mut r = WriteOnly::new();
+    r.write(WriteOnly::Field, 1);
+
+    assert_eq!(unsafe { FIELD }, 1);
 }
