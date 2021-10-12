@@ -53,6 +53,8 @@ impl BitAccess {
         let read_raw_fn = self.read_raw_fn();
         let write_raw_fn = self.write_raw_fn();
 
+        let structure = self.structure();
+
         let vis = &self.struct_visibility;
         let ident = &self.struct_identifier;
         let attributes = &self.attributes;
@@ -75,9 +77,7 @@ impl BitAccess {
 
         let public_api = quote! {
             #(#attributes)*
-            #vis struct #ident {
-                inner: #private_module_ident::#private_struct_ident,
-            }
+            #structure
 
             #[allow(non_upper_case_globals)]
             impl #ident {
@@ -92,6 +92,27 @@ impl BitAccess {
         quote! {
             #public_api
             #private_api
+        }
+    }
+
+    fn structure(&self) -> TokenStream {
+        let vis = &self.struct_visibility;
+        let ident = &self.struct_identifier;
+
+        match self.top_level_arguments.implementation {
+            Implementation::Inline(_) => {
+                let private_module_ident = self.private_module_ident();
+                let private_struct_ident = self.private_struct_ident();
+
+                quote! {
+                    #vis struct #ident {
+                        inner: #private_module_ident::#private_struct_ident,
+                    }
+                }
+            }
+            _ => quote! {
+                #vis struct #ident;
+            },
         }
     }
 
@@ -293,14 +314,14 @@ impl BitAccess {
             Implementation::GlobalWriteOnly(_) => {
                 quote! {
                     #vis fn new() -> Self {
-                        Self { inner: #private_struct_ident {}, }
+                        Self
                     }
                 }
             }
             _ => {
                 quote! {
                     #vis fn new() -> Self {
-                        Self { inner: #private_struct_ident {}, }
+                        Self
                     }
 
                     #vis fn fetch() -> super::#representation_ident {

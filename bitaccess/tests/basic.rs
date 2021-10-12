@@ -77,10 +77,18 @@ fn propagates_top_level_attributes() {
 
 #[test]
 fn can_use_custom_read_via() {
+    unsafe { GLOBAL_TEST = 0 };
     let mut r = ViaTests::new();
     r.write(ViaTests::BitZero, 0b1u64);
     assert_eq!(r.read(ViaTests::BitZero).value(), 1);
     assert_eq!(unsafe { GLOBAL_TEST }, 1);
+}
+
+#[test]
+fn can_call_directly() {
+    unsafe { GLOBAL_TEST = 0 };
+    ViaTests.write(ViaTests::BitZero, 1);
+    assert_eq!(ViaTests.read(ViaTests::BitZero).value(), 1)
 }
 
 #[test]
