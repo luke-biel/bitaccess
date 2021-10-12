@@ -1,4 +1,4 @@
-use bitaccess::{bitaccess, FieldAccess};
+use bitaccess::{bitaccess, FieldAccess, ReadBits, WriteBits};
 
 #[bitaccess(base_type = u64)]
 pub enum Variants {

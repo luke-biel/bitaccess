@@ -1,4 +1,3 @@
-use convert_case::{Case, Casing};
 use proc_macro2::{Ident, TokenStream as TokenStream2};
 use quote::quote;
 use syn::{
@@ -184,9 +183,6 @@ impl BitField {
     }
 
     fn inline_enum_ident(&self) -> Ident {
-        Ident::new(
-            &self.ident.to_string().to_case(Case::UpperCamel),
-            self.ident.span(),
-        )
+        Ident::new(&self.ident.to_string(), self.ident.span())
     }
 }

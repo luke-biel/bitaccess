@@ -1,4 +1,4 @@
-use bitaccess::bitaccess;
+use bitaccess::{bitaccess, ReadBits, WriteBits};
 
 #[bitaccess(base_type = u64, kind = default)]
 #[derive(Clone, Debug, PartialEq)]

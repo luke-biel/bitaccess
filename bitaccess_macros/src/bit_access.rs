@@ -40,7 +40,7 @@ impl BitAccess {
         let private_struct_ident = self.private_struct_ident();
         let main_struct_const_fields = self.main_struct_const_fields();
         let field_inline_variant_enums = self.field_inline_variant_enums();
-        let main_struct_accessors = self.main_struct_accessors(&enum_field_names);
+        let read_write_impls = self.read_write_impls(&enum_field_names);
         let representation_ident = self.representation_struct_ident();
         let private_struct = self.private_struct_definition(&private_struct_ident);
         let main_struct_constructors =
@@ -62,10 +62,10 @@ impl BitAccess {
         let private_api = quote! {
             #vis mod #private_module_ident {
                 #private_struct
+                #read_write_impls
 
                 impl super::#ident {
                     #main_struct_constructors
-                    #main_struct_accessors
 
                     #read_raw_fn
                     #write_raw_fn
@@ -143,9 +143,20 @@ impl BitAccess {
         )
     }
 
-    fn main_struct_accessors(&self, enum_field_names: &[Ident]) -> TokenStream2 {
-        let read_impl = self.read_impl(enum_field_names.iter());
-        let write_impl = self.write_impl(enum_field_names.iter());
+    fn read_write_impls(&self, enum_field_names: &[Ident]) -> TokenStream2 {
+        let ident = &self.struct_identifier;
+        let base_type = &self.top_level_arguments.base_type;
+
+        let read_impl = self.read_impl(enum_field_names.iter()).map(|implementation| quote! {
+            impl<F: bitaccess::FieldAccess<#base_type>> bitaccess::ReadBits<#base_type, F> for super::#ident {
+                #implementation
+            }
+        });
+        let write_impl = self.write_impl(enum_field_names.iter()).map(|implementation| quote! {
+            impl<F: bitaccess::FieldAccess<#base_type>> bitaccess::WriteBits<#base_type, F> for super::#ident {
+                #implementation
+            }
+        });
 
         quote! {
             #read_impl
@@ -193,15 +204,17 @@ impl BitAccess {
             .collect()
     }
 
-    fn read_impl<'a>(&self, enum_field_names: impl Iterator<Item = &'a Ident>) -> TokenStream2 {
+    fn read_impl<'a>(
+        &self,
+        enum_field_names: impl Iterator<Item = &'a Ident>,
+    ) -> Option<TokenStream2> {
         if self.top_level_arguments.is_read() {
             let readers: Vec<_> = self.fields.iter().map(|item| item.reader()).collect();
-            let vis = &self.struct_visibility;
             let base_type = &self.top_level_arguments.base_type;
 
-            quote! {
+            Some(quote! {
                 #[allow(unreachable_code)]
-                #vis fn read<F: bitaccess::FieldAccess<#base_type>>(
+                fn read(
                     &self,
                     bits: bitaccess::FieldDefinition<#base_type, F>
                 ) -> bitaccess::Field<#base_type, F> {
@@ -211,9 +224,9 @@ impl BitAccess {
                         _ => panic!("use provided consts to read from register"),
                     })
                 }
-            }
+            })
         } else {
-            TokenStream2::new()
+            None
         }
     }
 
@@ -241,15 +254,17 @@ impl BitAccess {
         }
     }
 
-    fn write_impl<'a>(&self, enum_field_names: impl Iterator<Item = &'a Ident>) -> TokenStream2 {
+    fn write_impl<'a>(
+        &self,
+        enum_field_names: impl Iterator<Item = &'a Ident>,
+    ) -> Option<TokenStream2> {
         if self.top_level_arguments.is_write() {
             let writers: Vec<_> = self.fields.iter().map(|item| item.writer()).collect();
-            let vis = &self.struct_visibility;
             let base_type = &self.top_level_arguments.base_type;
 
-            quote! {
+            Some(quote! {
                 #[allow(unreachable_code)]
-                #vis fn write<F: bitaccess::FieldAccess<#base_type>>(
+                fn write(
                     &mut self,
                     bits: bitaccess::FieldDefinition<#base_type, F>,
                     new_value: impl Into<bitaccess::Field<#base_type, F>>
@@ -260,9 +275,9 @@ impl BitAccess {
                         _ => panic!("use provided consts to write to register"),
                     }
                 }
-            }
+            })
         } else {
-            TokenStream2::new()
+            None
         }
     }
 
