@@ -1,6 +1,6 @@
 [package]
 name = "bitaccess_macros"
-version = "0.3.0"
+version = "0.4.0"
 authors = ["Łukasz Biel <lukasz.p.biel@gmail.com>"]
 description = "bitaccess macro implementations (use `bitaccess` instead of this)"
 keywords = ["macros"]
